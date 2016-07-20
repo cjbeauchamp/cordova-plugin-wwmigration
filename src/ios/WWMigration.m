@@ -140,7 +140,6 @@
     NSFetchRequest *request = [[NSFetchRequest alloc] initWithEntityName:@"Transaction"];
     NSError *error = nil;
     NSArray *results = [context executeFetchRequest:request error:&error];
-    NSLog(@"Txn results: %@", results);
     
     NSInteger type = [[NSUserDefaults standardUserDefaults] integerForKey:@"com.whitewaterlabs.moniengine.preference.currency_type"];
     if(type < USD) {
@@ -151,11 +150,7 @@
     
     NSMutableArray *serialized = [NSMutableArray array];
     for(Transaction *txn in results) {
-        
-        NSLog(@"Txn: %@", txn);
-
         double amt = txn.amount.doubleValue * pow(10, currency.decimalCount);
-
         CGFloat created = [txn.created timeIntervalSince1970]*1000;        
         [serialized addObject:@{
                                 @"amount": [NSNumber numberWithDouble:amt],
@@ -164,7 +159,6 @@
                                 @"created": [NSNumber numberWithFloat:created],
                                 @"created": [NSNumber numberWithBool:txn.isAdjustment.boolValue],
                                 }];
-
     }
     
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:serialized];
