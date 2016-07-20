@@ -26,6 +26,6 @@
 @property (readonly, strong, nonatomic) NSManagedObjectModel *managedObjectModel;
 @property (readonly, strong, nonatomic) NSPersistentStoreCoordinator *persistentStoreCoordinator;
 
-- (void) testCallback:(CDVInvokedUrlCommand*)command;
+- (void) getPreferences:(CDVInvokedUrlCommand*)command;
 
 @end

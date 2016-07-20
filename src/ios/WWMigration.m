@@ -74,12 +74,153 @@
     return nil;
 }
 
+/*
 - (void) testCallback:(CDVInvokedUrlCommand*)command
 {
     NSLog(@"NSLOGG");
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"A param was null"];
     pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+ */
+
+- (void) getPreferences:(CDVInvokedUrlCommand*)command
+{
+    NSMutableDictionary *responseDict = [NSMutableDictionary dictionary];
+    
+    BOOL soundEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"preference-sound-enabled"];
+    responseDict[@"soundsEnabled"] = [NSNumber numberWithBool:soundEnabled];
+    
+    BOOL syncEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"preference-sync-enabled"];
+    responseDict[@"sync_enabled"] = [NSNumber numberWithBool:syncEnabled];
+
+    BOOL pinEnabled = FALSE;
+    NSString *finalPIN = [[NSUserDefaults standardUserDefaults] stringForKey:@"preference-final-pin"];
+    if(finalPIN != nil) {
+        pinEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"preference-pin-timeout"];
+    }
+    responseDict[@"pin"] = pinEnabled ? finalPIN : nil;
+    
+    NSString *limitFull = [[NSUserDefaults standardUserDefaults] objectForKey:@"preference-limit-full-string"];
+    responseDict[@"csFullAmount"] = [NSNumber numberWithLong:(long)(limitFull == nil ? 0 : limitFull.integerValue)];
+    
+    NSString *limitLow = [[NSUserDefaults standardUserDefaults] objectForKey:@"preference-limit-low-string"];
+    responseDict[@"csLowAmount"] = [NSNumber numberWithLong:(long)(limitLow == nil ? 0 : limitLow.integerValue)];
+    
+    NSString *limitAlert = [[NSUserDefaults standardUserDefaults] objectForKey:@"preference-limit-alert-string"];
+    responseDict[@"csAlertAmount"] = [NSNumber numberWithLong:(long)(limitAlert == nil ? 0 : limitAlert.integerValue)];
+    
+    NSData *d = [[NSUserDefaults standardUserDefaults] objectForKey:@"preference-registration-email"];
+    if(d != nil) {
+        responseDict[@"migratedEmail"] = [WWMigration AES256DecryptData:d];
+    }
+    
+    d = [[NSUserDefaults standardUserDefaults] objectForKey:@"preference-registration-password"];
+    if(d != nil) {
+        responseDict[@"migratedPassword"] = [WWMigration AES256DecryptData:d];
+    }
+    
+    NSUInteger serverLocation = [[NSUserDefaults standardUserDefaults] integerForKey:@"preference-server-location"];
+    responseDict[@"serverLocation"] = [NSNumber numberWithInteger:serverLocation];
+    
+    NSInteger type = [[NSUserDefaults standardUserDefaults] integerForKey:@"com.whitewaterlabs.moniengine.preference.currency_type"];
+    if(type < USD) {
+        type = USD;
+    }
+    MECurrency *currency = [MECurrency currencyWithType:(MECurrencyType)type];
+    responseDict[@"defaultCurrency"] = currency.shortLabel.lowercaseString;
+
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:responseDict];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
+#pragma mark - Core Data stack
+
+// Returns the managed object context for the application.
+// If the context doesn't already exist, it is created and bound to the persistent store coordinator for the application.
+- (NSManagedObjectContext *)managedObjectContext
+{
+    if (__managedObjectContext != nil) {
+        return __managedObjectContext;
+    }
+    
+    NSPersistentStoreCoordinator *coordinator = [self persistentStoreCoordinator];
+    if (coordinator != nil) {
+        __managedObjectContext = [[NSManagedObjectContext alloc] init];
+        [__managedObjectContext setPersistentStoreCoordinator:coordinator];
+    }
+    return __managedObjectContext;
+}
+
+// Returns the managed object model for the application.
+// If the model doesn't already exist, it is created from the application's model.
+- (NSManagedObjectModel *)managedObjectModel
+{
+    if (__managedObjectModel != nil) {
+        return __managedObjectModel;
+    }
+    NSURL *modelURL = [[NSBundle mainBundle] URLForResource:@"Moni" withExtension:@"momd"];
+    __managedObjectModel = [[NSManagedObjectModel alloc] initWithContentsOfURL:modelURL];
+    return __managedObjectModel;
+}
+
+
+// Returns the persistent store coordinator for the application.
+// If the coordinator doesn't already exist, it is created and the application's store added to it.
+- (NSPersistentStoreCoordinator *)persistentStoreCoordinator
+{
+    if (__persistentStoreCoordinator != nil) {
+        return __persistentStoreCoordinator;
+    }
+    
+    NSURL *storeURL = [[self applicationDocumentsDirectory] URLByAppendingPathComponent:@"Moni.sqlite"];
+    
+    NSDictionary *options = [NSDictionary dictionaryWithObjectsAndKeys:
+                             [NSNumber numberWithBool:YES], NSMigratePersistentStoresAutomaticallyOption,
+                             [NSNumber numberWithBool:YES], NSInferMappingModelAutomaticallyOption, nil];
+    
+    NSError *error = nil;
+    __persistentStoreCoordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:[self managedObjectModel]];
+    if (![__persistentStoreCoordinator addPersistentStoreWithType:NSSQLiteStoreType
+                                                    configuration:nil
+                                                              URL:storeURL
+                                                          options:options
+                                                            error:&error]) {
+        /*
+         Replace this implementation with code to handle the error appropriately.
+         
+         abort() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
+         
+         Typical reasons for an error here include:
+         * The persistent store is not accessible;
+         * The schema for the persistent store is incompatible with current managed object model.
+         Check the error message to determine what the actual problem was.
+         
+         
+         If the persistent store is not accessible, there is typically something wrong with the file path. Often, a file URL is pointing into the application's resources directory instead of a writeable directory.
+         
+         If you encounter schema incompatibility errors during development, you can reduce their frequency by:
+         * Simply deleting the existing store:
+         [[NSFileManager defaultManager] removeItemAtURL:storeURL error:nil]
+         
+         * Performing automatic lightweight migration by passing the following dictionary as the options parameter:
+         [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithBool:YES], NSMigratePersistentStoresAutomaticallyOption, [NSNumber numberWithBool:YES], NSInferMappingModelAutomaticallyOption, nil];
+         
+         Lightweight migration will only work for a limited set of schema changes; consult "Core Data Model Versioning and Data Migration Programming Guide" for details.
+         
+         */
+        NSLog(@"Unresolved error %@, %@", error, [error userInfo]);
+        abort();
+    }
+    
+    return __persistentStoreCoordinator;
+}
+
+
+// Returns the URL to the application's Documents directory.
+- (NSURL *)applicationDocumentsDirectory
+{
+    return [[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] lastObject];
 }
 
 @end
