@@ -1,0 +1,21 @@
+{
+  "name": "cordova-plugin-wwmigration",
+  "version": "1.0-dev",
+  "description": "Adapter for migration",
+  "cordova": {
+    "id": "cordova-plugin-wwmigration",
+    "platforms": [
+      "ios",
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cjbeauchamp/cordova-plugin-wwmigration.git"
+  },
+  "keywords": [
+    "cordova",
+  ],
+  "author": "Whitewater Labs",
+  "license": "Apache-2.0",
+  "devDependencies": {}
+}
