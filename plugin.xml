@@ -35,6 +35,21 @@
             </feature>
         </config-file>
 
+        <header-file src="src/ios/DeleteAccount.h" />
+        <source-file src="src/ios/DeleteAccount.m" />
+
+        <header-file src="src/ios/DeleteTransaction.h" />
+        <source-file src="src/ios/DeleteTransaction.m" />
+
+        <header-file src="src/ios/MAccount.h" />
+        <source-file src="src/ios/MAccount.m" />
+
+        <header-file src="src/ios/MECurrency.h" />
+        <source-file src="src/ios/MECurrency.m" />
+
+        <header-file src="src/ios/Transaction.h" />
+        <source-file src="src/ios/Transaction.m" />
+
         <header-file src="src/ios/WWMigration.h" />
         <source-file src="src/ios/WWMigration.m" />
     </platform>
