@@ -134,6 +134,59 @@
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
+- (void) getTransactions:(CDVInvokedUrlCommand*)command
+{
+    NSManagedObjectContext *context = self.managedObjectContext;
+    NSFetchRequest *request = [[NSFetchRequest alloc] initWithEntityName:@"Transaction"];
+    NSError *error = nil;
+    NSArray *results = [context executeFetchRequest:request error:&error];
+    NSLog(@"Txn results: %@", results);
+    
+    NSInteger type = [[NSUserDefaults standardUserDefaults] integerForKey:@"com.whitewaterlabs.moniengine.preference.currency_type"];
+    if(type < USD) {
+        type = USD;
+    }
+    
+    MECurrency *currency = [MECurrency currencyWithType:(MECurrencyType)type];
+    
+    NSMutableArray *serialized = [NSMutableArray array];
+    for(Transaction *txn in results) {
+        
+        NSLog(@"Txn: %@", txn);
+
+        double amt = txn.amount.doubleValue * pow(10, currency.decimalCount);
+
+        CGFloat created = [txn.created timeIntervalSince1970]*1000;        
+        [serialized addObject:@{
+                                @"amount": [NSNumber numberWithDouble:amt],
+                                @"accountName": txn.account.name,
+                                @"notes": txn.desc ? txn.desc : [NSNull null],
+                                @"created": [NSNumber numberWithFloat:created],
+                                @"created": [NSNumber numberWithBool:txn.isAdjustment.boolValue],
+                                }];
+
+    }
+    
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:serialized];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
+- (void) getAccounts:(CDVInvokedUrlCommand*)command
+{
+    NSManagedObjectContext *context = self.managedObjectContext;
+    NSFetchRequest *request = [[NSFetchRequest alloc] initWithEntityName:@"Account"];
+    NSError *error = nil;
+    NSArray *results = [context executeFetchRequest:request error:&error];
+
+    NSMutableArray *serialized = [NSMutableArray array];
+    for(MAccount *acct in results) {
+        [serialized addObject:@{@"name": acct.name}];
+    }
+    
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:serialized];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
 #pragma mark - Core Data stack
 
 // Returns the managed object context for the application.

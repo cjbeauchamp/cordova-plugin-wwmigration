@@ -27,5 +27,7 @@
 @property (readonly, strong, nonatomic) NSPersistentStoreCoordinator *persistentStoreCoordinator;
 
 - (void) getPreferences:(CDVInvokedUrlCommand*)command;
+- (void) getAccounts:(CDVInvokedUrlCommand*)command;
+- (void) getTransactions:(CDVInvokedUrlCommand*)command;
 
 @end
