@@ -131,6 +131,13 @@
     responseDict[@"defaultCurrency"] = currency.shortLabel.lowercaseString;
 
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:responseDict];
+    
+    // if nil, means it was never set and a previous version never existed
+    if([[NSUserDefaults standardUserDefaults] objectForKey:@"preference-sound-enabled"] == nil) {
+        // so give a failure result
+        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
+    }
+    
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
