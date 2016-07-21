@@ -157,7 +157,7 @@
                                 @"accountName": txn.account.name,
                                 @"notes": txn.desc ? txn.desc : [NSNull null],
                                 @"created": [NSNumber numberWithFloat:created],
-                                @"created": [NSNumber numberWithBool:txn.isAdjustment.boolValue],
+                                @"isAdjustment": [NSNumber numberWithBool:txn.isAdjustment.boolValue],
                                 }];
     }
     
